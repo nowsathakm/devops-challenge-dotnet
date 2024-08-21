@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '.version'
+      - '.github/**'
+      - '.gitignore'
+      - '.dockerignore'
 
 jobs:
   bump-version:
