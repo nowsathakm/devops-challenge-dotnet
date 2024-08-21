@@ -1,0 +1,27 @@
+name: Update API Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Select the environment
+        required: true
+        type: choice
+        options: 
+        - development
+        - staging
+        - production
+      version:
+        description: 'Version number (eg: 0.20.461)'
+        required: true
+        default: '0.20.461'
+
+jobs:
+  update_postgresql:
+    name: branch - ${{ github.ref_name }} - ${{ github.event.inputs.version }}
+    runs-on: ubuntu-latest
+    environment: development
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2

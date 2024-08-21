@@ -1,0 +1,103 @@
+name: Deploy to Development
+
+on:
+  workflow_dispatch:
+#  push:
+#    branches:
+#      - main
+#  pull_request:
+#    branches:
+#      - main
+
+jobs:
+  Unit-Tests:
+    runs-on: ubuntu-latest
+    environment: development
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Specify your .NET version
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '5.x'
+
+    - name: Restore dependencies
+      run: dotnet restore DevOpsChallenge.SalesApi.sln
+
+    - name: Build project
+      run: dotnet build DevOpsChallenge.SalesApi.sln --no-restore --configuration Release
+
+    - name: Run Unit Tests
+      run: dotnet test ./tests/DevOpsChallenge.SalesApi.Business.UnitTests/DevOpsChallenge.SalesApi.Business.UnitTests.csproj --no-build --configuration Release --collect:"XPlat Code Coverage"
+
+    - name: Upload unit tests results
+      uses: actions/upload-artifact@v4
+      with:
+        name: unit-tests-results
+        path: './tests/DevOpsChallenge.SalesApi.Business.UnitTests/TestResults'
+
+  Build-Deploy:
+    runs-on: ubuntu-latest
+    environment: development
+    needs: [Unit-Tests]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: eu-north-1
+
+    - name: Build & Push image
+      env:
+        ASPNETCORE_ENVIRONMENT: ${{ secrets.ASPNETCORE_ENVIRONMENT }}
+        ConnectionStrings__Database: ${{ secrets.DB_CONNECTION_STRING }}
+      run: |
+        aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin ${{ secrets.ECR_URL }}
+        docker pull ${{ secrets.ECR_URL }}/simple-api:dev
+        docker compose build devopschallenge.salesapi
+        docker tag devopschallenge:latest ${{ secrets.ECR_URL }}/simple-api:dev
+        docker push ${{ secrets.ECR_URL }}/simple-api:dev
+
+    - name: Deploy to ECS
+      run: |
+        aws ecs update-service --cluster SimpleAPICluster --service simple-api-service --force-new-deployment
+
+  Integration-Tests:
+    runs-on: ubuntu-latest
+    environment: development
+    needs: [Build-Deploy]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Specify your .NET version
+#    - name: Set up .NET
+#      uses: actions/setup-dotnet@v3
+#      with:
+#        dotnet-version: '5.x'
+#
+#    - name: Restore dependencies
+#      run: dotnet restore DevOpsChallenge.SalesApi.sln
+#
+#    - name: Build project
+#      run: dotnet build DevOpsChallenge.SalesApi.sln --no-restore --configuration Release
+
+    - name: Run Integration Tests
+      env:
+        SALES_API_ENDPOINT: ${{ vars.SALES_API_ENDPOINT}}
+      run: dotnet test ./tests/DevOpsChallenge.SalesApi.IntegrationTests/DevOpsChallenge.SalesApi.IntegrationTests.csproj --no-build --configuration Release --collect:"XPlat Code Coverage"
+
+    - name: Upload integration tests results
+      uses: actions/upload-artifact@v4
+      with:
+        name: integration-tests-results
+        path: './tests/DevOpsChallenge.SalesApi.IntegrationTests/TestResults'

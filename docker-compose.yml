@@ -1,0 +1,9 @@
+#version: '3.4'
+
+services:
+  devopschallenge.salesapi:
+    image: ${DOCKER_REGISTRY-}devopschallenge
+    container_name: devops_challenge
+    build:
+      context: .
+      dockerfile: src/DevOpsChallenge.SalesApi/Dockerfile 

@@ -76,7 +76,7 @@ namespace DevOpsChallenge.SalesApi
             services.AddSwaggerGen(c =>
             {
                 // Information
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "sales-api", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "sales-api", Version = "v1", Description = "Simple Sales API" });
 
                 // Comments
                 string xmlCommentsFilePath = Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
@@ -87,6 +87,12 @@ namespace DevOpsChallenge.SalesApi
 
                 // Operation IDs - required for some client code generation tools
                 c.CustomOperationIds(x => (x.ActionDescriptor as ControllerActionDescriptor)?.ActionName);
+            });
+
+            // Remove server detail in the response header
+            services.Configure<Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerOptions>(options =>
+            {
+                options.AddServerHeader = false;
             });
         }
 
@@ -112,7 +118,12 @@ namespace DevOpsChallenge.SalesApi
                     c.SwaggerEndpoint($"/swagger/v1/swagger.json", "sales-api" + ' ' + "v1");
                 });
             }
-
+            // Ensure the database is created and migrations are applied
+            using (var serviceScope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope())
+            {
+                var context = serviceScope.ServiceProvider.GetService<DatabaseContext>();
+                context.Database.Migrate(); // This will apply any pending migrations and create the database if it doesn't exist
+            }
             // Endpoint routing
             app.UseRouting();
 

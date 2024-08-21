@@ -22,10 +22,21 @@ namespace DevOpsChallenge.SalesApi.Database.Migrations
                 {
                     table.PrimaryKey("PK_Sale", x => x.Id);
                 });
+
+            // Add an index on the TransactionId column
+            migrationBuilder.CreateIndex(
+                name: "IX_Sale_TransactionId",
+                table: "Sale",
+                column: "TransactionId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            // Drop the index if it exists
+            migrationBuilder.DropIndex(
+                name: "IX_Sale_TransactionId",
+                table: "Sale");
+                
             migrationBuilder.DropTable(
                 name: "Sale");
         }

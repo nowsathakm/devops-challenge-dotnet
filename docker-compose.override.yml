@@ -1,0 +1,37 @@
+#version: '3.4'
+volumes:
+  dbserver_data_store:
+
+services:
+  devopschallenge.salesapi:
+    container_name: devops_challenge
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+      - ConnectionStrings__Database=${DB_CONNECTION_STRING}
+    ports:
+      - 5000:80
+    networks:
+      - localdev
+    depends_on:
+      - dbserver
+
+  dbserver:
+    #image: mcr.microsoft.com/mssql/server:2017-latest
+    image: mcr.microsoft.com/azure-sql-edge
+    container_name: azure_sql_edge_dbserver
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=test1234Fm@
+      - MSSQL_TCP_PORT=1433
+    ports:
+      - "1433:1433"
+    volumes:
+      - dbserver_data_store:/var/opt/mssql
+    networks:
+      - localdev
+
+networks:
+  localdev:
+#    name: localdev
+#    driver: bridge
