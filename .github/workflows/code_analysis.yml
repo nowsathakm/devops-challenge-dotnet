@@ -1,0 +1,41 @@
+name: Deploy to Development
+
+on:
+  workflow_dispatch:
+#  push:
+#    branches:
+#      - develop
+#      - staging
+#      - main
+#  pull_request:
+#    branches:
+#      - main
+
+jobs:
+  Unit-Tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Specify your .NET version
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '5.x'
+
+    - name: Restore dependencies
+      run: dotnet restore DevOpsChallenge.SalesApi.sln
+
+    - name: Build project
+      run: dotnet build DevOpsChallenge.SalesApi.sln --no-restore --configuration Release
+
+    - name: Run Unit Tests
+      run: dotnet test ./tests/DevOpsChallenge.SalesApi.Business.UnitTests/DevOpsChallenge.SalesApi.Business.UnitTests.csproj --no-build --configuration Release --collect:"XPlat Code Coverage"
+
+    - name: Upload unit tests results
+      uses: actions/upload-artifact@v4
+      with:
+        name: unit-tests-results
+        path: './tests/DevOpsChallenge.SalesApi.Business.UnitTests/TestResults'
