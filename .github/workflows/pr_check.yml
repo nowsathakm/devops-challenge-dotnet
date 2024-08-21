@@ -1,17 +1,31 @@
-name: Code Analysis
+name: PR Quality Check
 
 on:
-  workflow_dispatch:
-#  push:
-#    branches:
-#      - develop
-#      - staging
-#      - main
+  pull_request:
+    branches:
+      - develop
+      - staging
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
+  pr-name-check:
+    runs-on: ubuntu-latest    
+    steps:
+      - uses: morrisoncole/pr-lint-action@v1.5.0
+        with:
+          title-regex: '((API-[0-9]+\s)\[((fixed|added|released|updated|removed|wip|debug)*?)\]\s.+)|(\[((fixed|added|released|updated|removed|wip|debug)*?)\]\s(?!APT-[0-9]+).*.+)'
+          on-failed-regex-fail-action: true
+          on-failed-regex-request-changes: true
+          on-failed-regex-create-review: true
+          on-failed-regex-comment:
+            "Your PR title has issues, please follow the template. API-1234 [fixed|added|released|updated|removed|wip|debug] Description. Or [fixed|added|released|updated|removed|wip|debug] Description."
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+        if: github.event_name == 'pull_request'
+
   Analysis:
-    name: Analayzed branch - ${{ github.ref_name }}
     runs-on: ubuntu-latest
 
     steps:

@@ -1,0 +1,32 @@
+name: Auto Version Bump
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v3
+
+      - name: Read the current version & update
+        run: |
+          export API_VERSION=`cat .version`
+          IFS="." read -r V_MAJOR V_MINOR V_PATCH <<< $API_VERSION
+          echo $APT_VERSION
+          V_PATCH=$((V_PATCH + 1))
+          NEW_VERSION="$V_MAJOR.$V_MINOR.$V_PATCH"
+          echo $NEW_VERSION > .version
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Commit and push new version
+        run: |
+          git config --global user.name "${{ secrets.USERNAME }}"
+          git config --global user.email "${{ secrets.EMAIL }}"
+          git add .version
+          git commit -m "Bump version to ${{ env.NEW_VERSION }}"
+          git tag "v${{ env.NEW_VERSION }}"
+          git push origin main --tags

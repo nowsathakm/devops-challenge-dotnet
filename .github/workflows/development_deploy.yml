@@ -1,13 +1,12 @@
 name: Deploy to Development
 
 on:
+  push:
+    branches:
+      - develop
+    types:
+      - merged
   workflow_dispatch:
-#  push:
-#    branches:
-#      - main
-#  pull_request:
-#    branches:
-#      - main
 
 jobs:
   Unit-Tests:
@@ -78,18 +77,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-
-    # Specify your .NET version
-#    - name: Set up .NET
-#      uses: actions/setup-dotnet@v3
-#      with:
-#        dotnet-version: '5.x'
-#
-#    - name: Restore dependencies
-#      run: dotnet restore DevOpsChallenge.SalesApi.sln
-#
-#    - name: Build project
-#      run: dotnet build DevOpsChallenge.SalesApi.sln --no-restore --configuration Release
 
     - name: Run Integration Tests
       env:
